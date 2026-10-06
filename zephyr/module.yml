@@ -1,0 +1,7 @@
+# Copyright (c) 2026 ITE Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+name: hal_ite
+build:
+  cmake-ext: True
+  kconfig-ext: True
