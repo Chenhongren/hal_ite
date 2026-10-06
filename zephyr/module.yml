@@ -1,0 +1,5 @@
+name: hal_ite
+build:
+  cmake: .
+  settings:
+    dts_root: .
