@@ -38,6 +38,10 @@
  */
 #define TF_PSA_CRYPTO_CONFIG_VERSION 0x01000000
 
+
+/* ITE Debug */
+#define PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT
+
 /**
  * \name SECTION: SECTION Cryptographic mechanism selection (PSA API)
  *

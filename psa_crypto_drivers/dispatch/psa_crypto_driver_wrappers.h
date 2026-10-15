@@ -46,6 +46,11 @@
 #include "../drivers/p256-m/p256-m_driver_entrypoints.h"
 
 #endif
+/* Headers for ite_it51xxx transparent driver */
+#if defined(PSA_CRYPTO_DRIVER_ITE_IT51XXX)
+#include "it51xxx_crypto_rsa.h"
+
+#endif
 
 /* END-driver headers */
 
@@ -78,12 +83,22 @@ static inline psa_status_t psa_driver_wrapper_init( void )
         return( status );
 #endif
 
+#if defined(PSA_CRYPTO_DRIVER_ITE_IT51XXX)
+    status = it51xxx_hwcrypto_common_init();
+    if (status != PSA_SUCCESS)
+        return ( status );
+#endif /* PSA_CRYPTO_DRIVER_ITE_IT51XXX */
+
     (void) status;
     return( PSA_SUCCESS );
 }
 
 static inline void psa_driver_wrapper_free( void )
 {
+#if defined(PSA_CRYPTO_DRIVER_ITE_IT51XXX)
+    (void)it51xxx_hwcrypto_common_free();
+#endif /* PSA_CRYPTO_DRIVER_ITE_IT51XXX */
+
 #if defined(PSA_CRYPTO_DRIVER_TEST)
     mbedtls_test_transparent_free( );
     mbedtls_test_opaque_free( );
@@ -286,6 +301,21 @@ static inline psa_status_t psa_driver_wrapper_sign_hash(
                 return( status );
             }
 #endif /* MBEDTLS_PSA_P256M_DRIVER_ENABLED */
+#if defined(PSA_CRYPTO_DRIVER_ITE_IT51XXX)
+            printf("%s ite debug %d signature\n", __func__, __LINE__);
+            status = ite_it51xxx_transparent_sign_hash(
+                        attributes,
+                        key_buffer,
+                        key_buffer_size,
+                        alg,
+                        hash,
+                        hash_length,
+                        signature,
+                        signature_size,
+                        signature_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ITE_IT51XXX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
             /* Fell through, meaning no accelerator supports this operation */
             return( psa_sign_hash_builtin( attributes,
@@ -368,6 +398,19 @@ static inline psa_status_t psa_driver_wrapper_verify_hash(
                 return( status );
             }
 #endif /* MBEDTLS_PSA_P256M_DRIVER_ENABLED */
+#if defined(PSA_CRYPTO_DRIVER_ITE_IT51XXX)
+            printf("%s ite debug %d verify hash\n", __func__, __LINE__);
+            status = ite_it51xxx_transparent_verify_hash( attributes,
+                                                          key_buffer,
+                                                          key_buffer_size,
+                                                          alg,
+                                                          hash,
+                                                          hash_length,
+                                                          signature,
+                                                          signature_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ITE_IT51XXX */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
             return( psa_verify_hash_builtin( attributes,
@@ -679,15 +722,19 @@ static inline psa_status_t psa_driver_wrapper_generate_key(
     psa_key_location_t location =
         PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
 
+    printf("%s ite debug %d\n", __func__, __LINE__);
 #if defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE)
     int is_default_production =
         psa_custom_key_parameters_are_default(custom, custom_data_length);
+    printf("%s ite debug %d\n", __func__, __LINE__);
     if( location != PSA_KEY_LOCATION_LOCAL_STORAGE && !is_default_production )
     {
         /* We don't support passing custom production parameters
          * to drivers yet. */
+        printf("%s ite debug %d\n", __func__, __LINE__);
         return PSA_ERROR_NOT_SUPPORTED;
     }
+    printf("%s ite debug %d\n", __func__, __LINE__);
 #else
     int is_default_production = 1;
     (void) is_default_production;
@@ -696,7 +743,9 @@ static inline psa_status_t psa_driver_wrapper_generate_key(
     switch( location )
     {
         case PSA_KEY_LOCATION_LOCAL_STORAGE:
+        printf("%s ite debug %d\n", __func__, __LINE__);
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+            printf("%s ite debug %d\n", __func__, __LINE__);
             /* Transparent drivers are limited to generating asymmetric keys. */
             /* We don't support passing custom production parameters
              * to drivers yet. */
@@ -729,16 +778,21 @@ static inline psa_status_t psa_driver_wrapper_generate_key(
             }
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
+            printf("%s ite debug %d\n", __func__, __LINE__);
             /* Software fallback */
             status = psa_generate_key_internal(
                 attributes, custom, custom_data, custom_data_length,
                 key_buffer, key_buffer_size, key_buffer_length );
+            if (status == PSA_ERROR_NOT_SUPPORTED) {
+                printf("%s ite debug %d\n", __func__, __LINE__);
+            }
             break;
 
         /* Add cases for opaque driver here */
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
 #if defined(PSA_CRYPTO_DRIVER_TEST)
         case PSA_CRYPTO_TEST_DRIVER_LOCATION:
+            printf("%s ite debug %d\n", __func__, __LINE__);
             status = mbedtls_test_opaque_generate_key(
                 attributes, key_buffer, key_buffer_size, key_buffer_length );
             break;
@@ -746,6 +800,7 @@ static inline psa_status_t psa_driver_wrapper_generate_key(
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
         default:
+            printf("%s ite debug %d\n", __func__, __LINE__);
             /* Key is declared with a lifetime not known to us */
             status = PSA_ERROR_INVALID_ARGUMENT;
             break;
@@ -1424,8 +1479,12 @@ static inline psa_status_t psa_driver_wrapper_hash_compute(
         return( status );
 #endif
 
+    /* TODO: add ite hw crypto accelerators here */
+    printf("%s ite debug %d\n", __func__, __LINE__);
+
     /* If software fallback is compiled in, try fallback */
 #if defined(MBEDTLS_PSA_BUILTIN_HASH)
+    printf("%s ite debug %d\n", __func__, __LINE__);
     status = mbedtls_psa_hash_compute( alg, input, input_length,
                                        hash, hash_size, hash_length );
     if( status != PSA_ERROR_NOT_SUPPORTED )
