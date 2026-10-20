@@ -35,6 +35,43 @@ extern "C" {
 /** Maximum RSA operand length in bytes. */
 #define IT51XXX_HWCRYPTO_RSA_MAX_BYTE_LEN 512 /* 512 bytes (4096 bits) */
 
+/** SHA256 hash length in 32-bit words. */
+#define SHA_SHA256_HASH_LEN_WORDS (PSA_HASH_LENGTH(PSA_ALG_SHA_256) / sizeof(uint32_t))
+
+/**
+ * @brief Maximum input length in bytes per SHA hardware operation.
+ *
+ * Larger messages are processed in chunks of up to 1024 bytes.
+ * For example, a 10 KiB message requires 10 hardware operations.
+ */
+#define SHA_HW_MAX_INPUT_LEN       1024
+/** Maximum input length in 32-bit words per SHA hardware operation. */
+#define SHA_HW_MAX_INPUT_LEN_WORDS (SHA_HW_MAX_INPUT_LEN / sizeof(uint32_t))
+
+/**
+ * @brief SHA DLM data.
+ *
+ * Must reside within the first 4k-byte of RAM and be aligned to a
+ * 256-byte boundary.
+ */
+struct it51xxx_sha_dlm {
+	/** SHA input buffer accessible as 32-bit words or bytes. */
+	union {
+		/** SHA input buffer accessed as 32-bit words. */
+		uint32_t input_words[SHA_HW_MAX_INPUT_LEN_WORDS];
+		/** SHA input buffer accessed as bytes. */
+		uint8_t input_bytes[SHA_HW_MAX_INPUT_LEN];
+	};
+	/** SHA hash state words H[0] through H[7]. */
+	uint32_t hash[SHA_SHA256_HASH_LEN_WORDS];
+	/** SHA initialization state. */
+	uint32_t sha_init;
+	/** Current index into the input buffer. */
+	uint32_t input_bytes_index;
+	/** Total input message length in bytes. */
+	uint32_t total_len;
+} __aligned(256);
+
 /**
  * @brief RSA DLM layout.
  *
@@ -66,6 +103,8 @@ struct it51xxx_rsa_dlm {
 union hwcrypto_dlm_block {
 	/** RSA DLM data. */
 	struct it51xxx_rsa_dlm rsa;
+	/** SHA DLM data. */
+	struct it51xxx_sha_dlm sha;
 	/** Raw access to the entire shared DLM region. */
 	uint8_t raw_data[IT51XXX_HWCRYPTO_DLM_SIZE];
 };

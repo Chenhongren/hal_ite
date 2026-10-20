@@ -8,6 +8,9 @@
 #if PSA_CRYPTO_DRIVER_ITE_IT51XXX_RSA
 #include "it51xxx_crypto_rsa.h"
 #endif /* PSA_CRYPTO_DRIVER_ITE_IT51XXX_RSA */
+#if PSA_CRYPTO_DRIVER_ITE_IT51XXX_SHA
+#include "it51xxx_crypto_sha.h"
+#endif /* PSA_CRYPTO_DRIVER_ITE_IT51XXX_SHA */
 
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/util.h>
@@ -53,6 +56,10 @@ psa_status_t it51xxx_hwcrypto_init(void)
 #if PSA_CRYPTO_DRIVER_ITE_IT51XXX_RSA
 	it51xxx_crypto_rsa_init();
 #endif /* PSA_CRYPTO_DRIVER_ITE_IT51XXX_RSA */
+
+#if PSA_CRYPTO_DRIVER_ITE_IT51XXX_SHA
+	it51xxx_crypto_sha_init();
+#endif /* PSA_CRYPTO_DRIVER_ITE_IT51XXX_SHA */
 
 	return PSA_SUCCESS;
 }

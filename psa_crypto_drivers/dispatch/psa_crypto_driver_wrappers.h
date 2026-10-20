@@ -52,6 +52,9 @@
 #if defined(PSA_CRYPTO_DRIVER_ITE_IT51XXX_RSA)
 #include "it51xxx_crypto_rsa.h"
 #endif
+#if defined(PSA_CRYPTO_DRIVER_ITE_IT51XXX_SHA)
+#include "it51xxx_crypto_sha.h"
+#endif
 #endif
 
 /* END-driver headers */
@@ -1466,6 +1469,13 @@ static inline psa_status_t psa_driver_wrapper_hash_compute(
     if( status != PSA_ERROR_NOT_SUPPORTED )
         return( status );
 #endif
+
+#if defined(PSA_CRYPTO_DRIVER_ITE_IT51XXX_SHA)
+    status = ite_it51xxx_transparent_hash_compute(
+                alg, input, input_length, hash, hash_size, hash_length );
+    if( status != PSA_ERROR_NOT_SUPPORTED )
+        return( status );
+#endif /* PSA_CRYPTO_DRIVER_ITE_IT51XXX_SHA */
 
     /* If software fallback is compiled in, try fallback */
 #if defined(MBEDTLS_PSA_BUILTIN_HASH)
